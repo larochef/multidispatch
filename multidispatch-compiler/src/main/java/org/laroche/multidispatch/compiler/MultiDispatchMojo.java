@@ -9,7 +9,6 @@ import org.apache.maven.plugin.MojoFailureException;
 import java.io.File;
 import java.io.FileFilter;
 import java.util.Collections;
-import java.util.Map;
 import java.util.Set;
 
 /**
