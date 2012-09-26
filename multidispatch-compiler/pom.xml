@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>org.laroche</groupId>
-  <artifactId>multidispatch-compiler</artifactId>
+  <artifactId>multidispatch-maven-plugin</artifactId>
   <version>1.0-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
 
@@ -19,6 +19,18 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-plugin-plugin</artifactId>
+                <version>3.1</version>
+                <configuration>
+                    <goalPrefix>multidispatch</goalPrefix>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
   <dependencies>
       <dependency>

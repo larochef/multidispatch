@@ -17,6 +17,7 @@
   <modules>
     <module>multidispatch-api</module>
     <module>multidispatch-compiler</module>
+    <module>multidispatch-test</module>
   </modules>
 
 </project>

@@ -69,6 +69,11 @@ public final class Compiler {
             }
         }, 0);
 
+        if(multiDispachedMethods.isEmpty()) {
+            str.close();
+            return;
+        }
+
         Collection<String> keys = ImmutableList.copyOf(methods.keys());
 
         for(String key : keys) {
@@ -77,8 +82,8 @@ public final class Compiler {
             }
         }
 
-        final ClassWriter writer = new ClassWriter(0);
         final String className = classNames.get(0);
+        final ClassWriter writer = new ClassWriter(0);
 
         ClassVisitor visitor = new ClassVisitor(Opcodes.ASM4, writer) {
             @Override
