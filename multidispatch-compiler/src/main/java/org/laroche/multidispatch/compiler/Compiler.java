@@ -28,11 +28,15 @@ import java.util.List;
  *
  * @author françois LAROCHE
  */
-public class Compiler {
+public final class Compiler {
+
+    private Compiler() {
+        // do not instanciate utility class
+    }
 
     private static final String ANNOTATION_DISPATCH_NAME = MultiDispatched.class.getName().replaceAll("\\.", "/");
 
-    public void compileFile(File file) throws Exception{
+    public static void compileFile(File file) throws Exception{
 
         InputStream str = new FileInputStream(file);
         ClassReader reader = new ClassReader(str);
@@ -115,14 +119,15 @@ public class Compiler {
 
         reader.accept(visitor, 0);
         str.close();
-
-        byte[] result = writer.toByteArray();
-        FileOutputStream fileWriter = new FileOutputStream(file);
-        fileWriter.write(result);
-        fileWriter.close();
+        if(!multiDispachedMethods.isEmpty()) {
+            byte[] result = writer.toByteArray();
+            FileOutputStream fileWriter = new FileOutputStream(file);
+            fileWriter.write(result);
+            fileWriter.close();
+        }
     }
 
-    private String parseName(String desc) {
+    private static String parseName(String desc) {
         if(!desc.startsWith("(")) {
             return null;
         }
