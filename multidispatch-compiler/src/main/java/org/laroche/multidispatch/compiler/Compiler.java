@@ -4,7 +4,6 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
-import org.laroche.multidispatch.api.MultiDispatched;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
@@ -34,7 +33,7 @@ public final class Compiler {
         // do not instanciate utility class
     }
 
-    private static final String ANNOTATION_DISPATCH_NAME = MultiDispatched.class.getName().replaceAll("\\.", "/");
+    private static final String ANNOTATION_DISPATCH_NAME = "Lorg/laroche/multidispatch/api/MultiDispatched;";
 
     public static void compileFile(File file) throws Exception{
 
@@ -45,6 +44,7 @@ public final class Compiler {
 
         final Multimap<String, String> methods = ArrayListMultimap.create();
         final List<String> multiDispachedMethods = Lists.newArrayList();
+        final List<String> multiDispachedMethodNames = Lists.newArrayList();
 
         reader.accept(new ClassVisitor(Opcodes.ASM4) {
             @Override
@@ -59,15 +59,18 @@ public final class Compiler {
                 methods.put(name, desc);
                 return new MethodVisitor(Opcodes.ASM4) {
                     @Override
-                    public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
-                        if(desc.contains(ANNOTATION_DISPATCH_NAME)) {
+                    public AnnotationVisitor visitAnnotation(String description, boolean visible) {
+                        if(ANNOTATION_DISPATCH_NAME.equals(description)) {
                             multiDispachedMethods.add(name + desc);
+                            multiDispachedMethodNames.add(name);
                         }
                         return super.visitAnnotation(desc, visible);
                     }
                 };
             }
         }, 0);
+
+        final String className = classNames.get(0);
 
         if(multiDispachedMethods.isEmpty()) {
             str.close();
@@ -77,50 +80,49 @@ public final class Compiler {
         Collection<String> keys = ImmutableList.copyOf(methods.keys());
 
         for(String key : keys) {
-            if(!multiDispachedMethods.contains(key)) {
+            if(!multiDispachedMethodNames.contains(key)) {
                 methods.removeAll(key);
             }
         }
 
-        final String className = classNames.get(0);
         final ClassWriter writer = new ClassWriter(0);
 
         ClassVisitor visitor = new ClassVisitor(Opcodes.ASM4, writer) {
             @Override
             public MethodVisitor visitMethod(int access, final String name, final String desc, String signature,
                                              String[] exceptions) {
-                if(multiDispachedMethods.contains(name)) {
-                    return new MethodVisitor(Opcodes.ASM4, super.visitMethod(access, name, desc, signature,
-                            exceptions)) {
-                        @Override
-                        public void visitCode() {
-                            if(multiDispachedMethods.contains(name + desc)) {
-                                for(String description : methods.get(name)) {
-                                    String castMeTo = parseName(description);
-                                    if(castMeTo == null) {
-                                        continue;
-                                    }
-                                    visitVarInsn(Opcodes.ALOAD, 1);
-                                    visitTypeInsn(Opcodes.INSTANCEOF, castMeTo);
-                                    Label l1 = new Label();
-                                    visitJumpInsn(Opcodes.IFEQ, l1);
-                                    visitVarInsn(Opcodes.ALOAD, 0);
-                                    visitVarInsn(Opcodes.ALOAD, 1);
-                                    visitTypeInsn(Opcodes.CHECKCAST, castMeTo);
-                                    visitMethodInsn(Opcodes.INVOKEVIRTUAL, className, name, description);
-                                    visitInsn(Opcodes.RETURN);
-                                    visitLabel(l1);
+                return new MethodVisitor(Opcodes.ASM4, super.visitMethod(access, name, desc, signature,
+                        exceptions)) {
+
+                    @Override
+                    public void visitCode() {
+                        if(multiDispachedMethods.contains(name + desc)) {
+                            for(String description : methods.get(name)) {
+                                if(description.equals(desc)) {
+                                    continue;
                                 }
+                                String castMeTo = parseName(description);
+                                if(castMeTo == null) {
+                                    continue;
+                                }
+                                visitVarInsn(Opcodes.ALOAD, 1);
+                                visitTypeInsn(Opcodes.INSTANCEOF, castMeTo);
+                                Label l1 = new Label();
+                                visitJumpInsn(Opcodes.IFEQ, l1);
+                                visitVarInsn(Opcodes.ALOAD, 0);
+                                visitVarInsn(Opcodes.ALOAD, 1);
+                                visitTypeInsn(Opcodes.CHECKCAST, castMeTo);
+                                visitMethodInsn(Opcodes.INVOKEVIRTUAL, className, name, description);
+                                visitInsn(Opcodes.RETURN);
+                                visitLabel(l1);
                             }
-                            super.visitCode();
-
                         }
-                    };
-                }
-                return super.visitMethod(access, name, desc, signature, exceptions);
+                        super.visitCode();
 
+                    }
+                };
             }
-        } ;
+        };
 
         reader.accept(visitor, 0);
         str.close();
@@ -151,8 +153,6 @@ public final class Compiler {
         }
         String type = parameters.substring(1, parameters.indexOf(';'));
         if(type.length() + 2 != parameters.length()) {
-            System.out.println("Multiple parameters found in parameters " + desc
-                    + ", this method will not be handled");
             return null;
         }
         return type;
