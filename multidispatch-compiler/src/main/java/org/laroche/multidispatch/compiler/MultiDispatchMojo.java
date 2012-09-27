@@ -24,10 +24,8 @@ public abstract class MultiDispatchMojo extends AbstractMojo {
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
-        this.getLog().info("><><>< Begin of multidispatch ><><><");
         try {
             for(File classFile : listClasses(getDirectory())) {
-                this.getLog().info("><><>< multidispatch on file " + classFile.getAbsolutePath());
                 Compiler.compileFile(classFile);
             }
         } catch (Exception e) {

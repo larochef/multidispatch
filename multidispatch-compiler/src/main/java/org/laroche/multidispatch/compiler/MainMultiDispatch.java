@@ -11,7 +11,7 @@ import java.io.File;
  */
 public class MainMultiDispatch extends MultiDispatchMojo  {
     /**
-     * @parameter expression=${project.build.directory}
+     * @parameter default-value="${project.build.outputDirectory}"
      */
     private File outputDirectory;
 

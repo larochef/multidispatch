@@ -12,7 +12,7 @@ import java.io.File;
 public class TestMultiDispatch extends MultiDispatchMojo {
 
     /**
-     * @parameter expression=${project.build.testOutputDirectory}
+     * @parameter default-value="${project.build.testOutputDirectory}"
      */
     private File testOutputDirectory;
 
